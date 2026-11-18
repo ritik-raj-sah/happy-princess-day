@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nandini’s Magical Kingdom — An Interactive 3D Princess Day Fairytale Experience</title>
+    
+    <!-- Fairytale Styling -->
+    <link rel="stylesheet" href="./style.css">
+    
+    <!-- ES Module Import Map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "./js/libs/three.module.js",
+            "three/addons/": "./js/libs/"
+        }
+    }
+    </script>
+    <script>
+    // Failsafe loader dismisser
+    window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const loader = document.getElementById('loading-screen');
+            if (loader && !loader.classList.contains('fade-out')) {
+                loader.classList.add('fade-out');
+                setTimeout(() => loader.style.display = 'none', 800);
+            }
+        }, 1800);
+    });
+    window.addEventListener('error', (e) => {
+        console.error('App Error:', e.message);
+    });
+    </script>
+</head>
+<body>
+
+    <!-- 3D WebGL Canvas Container -->
+    <div id="webgl-container"></div>
+
+    <!-- 1. Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader-crown">👑</div>
+        <h1 class="loader-title">NANDINI’S MAGICAL KINGDOM</h1>
+        <p class="loader-sub">Preparing her fairytale princess world...</p>
+        <div class="loader-bar">
+            <div class="loader-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- 2. Opening Story Prologue Cinematic -->
+    <div id="prologue-overlay">
+        <div class="prologue-card">
+            <div style="font-size: 2.8rem; margin-bottom: 0.5rem;">🏰✨</div>
+            <p class="prologue-step">Somewhere in a magical kingdom...</p>
+            <p class="prologue-step">There lives a very special princess.</p>
+            <h2 class="prologue-princess-name">Her name is Nandini. ❤️</h2>
+            <button id="btn-enter-kingdom" class="btn-royal-enter">ENTER HER KINGDOM ✨</button>
+        </div>
+    </div>
+
+    <!-- 3. Top HUD Bar -->
+    <header class="top-hud">
+        <div class="hud-pill">
+            <span style="font-size: 1.1rem;">👑</span>
+            <span class="kingdom-title">Nandini’s Kingdom</span>
+        </div>
+
+        <div class="hud-actions">
+            <button id="btn-celebrate" class="btn-celebrate-pill" title="Celebrate Princess Day">
+                🎉 Princess Day
+            </button>
+            <button id="btn-guided-tour" class="hud-btn" title="Guided Tour Mode">
+                🚀
+            </button>
+            <button id="btn-quality-toggle" class="hud-btn" title="Toggle Graphics Quality">
+                ⚡ HQ
+            </button>
+            <button id="btn-audio-toggle" class="hud-btn" title="Toggle Music">
+                🎵
+            </button>
+        </div>
+    </header>
+
+    <!-- 4. Interactive Hover / Tap Tooltip -->
+    <div id="interaction-tooltip">✨ Tap to Interact</div>
+
+    <!-- Proximity Interaction Prompt -->
+    <div id="proximity-prompt" style="display:none; position:fixed; bottom:160px; left:50%; transform:translateX(-50%); background:rgba(255,107,151,0.92); color:#fff; padding:10px 22px; border-radius:30px; font-size:1rem; font-weight:700; z-index:200; border:2px solid gold; box-shadow:0 4px 20px rgba(255,107,151,0.6); pointer-events:none; text-align:center;"></div>
+
+    <!-- Camera hint -->
+    <div id="camera-hint">Drag right side to rotate camera</div>
+
+    <!-- 5. Toast Notifications -->
+    <div id="toast-notification"></div>
+
+    <!-- 6. Mobile HUD Controls (Virtual Joystick & Action Buttons) -->
+    <div id="hud-controls">
+        <!-- Left Virtual Joystick -->
+        <div id="joystick-base">
+            <div id="joystick-stick"></div>
+        </div>
+
+        <!-- Right Quick Action Buttons -->
+        <div class="right-action-buttons">
+            <button id="btn-sunset-view" class="hud-btn btn-hud-sub" title="Sunset View on Balcony">
+                🌅
+            </button>
+            <button id="btn-hud-action" class="btn-hud-round" title="Action: Interact" style="display: none;">
+                ✨
+            </button>
+            <!-- RUN Button -->
+            <button id="btn-run" class="btn-run-round" title="Hold to Run">
+                🏃 RUN
+            </button>
+        </div>
+    </div>
+
+    <!-- 7. Bottom Sliding Location Navigator -->
+    <div class="bottom-sliding-bar">
+        <div class="location-indicator">
+            📍 <span id="hud-location-name">Kingdom Entrance</span>
+        </div>
+        <div class="sliding-scroll-container">
+            <button id="btn-prev-loc" class="btn-slider-arrow" aria-label="Previous Location">‹</button>
+            <div id="location-pills">
+                <!-- Location Pills dynamically populated by ControlsManager -->
+            </div>
+            <button id="btn-next-loc" class="btn-slider-arrow" aria-label="Next Location">›</button>
+        </div>
+    </div>
+
+    <!-- 8. Interactive Story Surprise Modal -->
+    <div id="story-modal" class="fairytale-modal">
+        <div class="modal-content-card">
+            <button id="btn-modal-close" class="btn-close-corner">✕</button>
+            <div class="modal-header-icon">💖</div>
+            <h3 id="story-modal-title" class="modal-heading">A Special Moment</h3>
+            <p id="story-modal-body" class="modal-quote">“Every little moment with you becomes a beautiful memory.”</p>
+            <div id="story-modal-sub" class="modal-subtext">Happy Princess Day</div>
+        </div>
+    </div>
+
+    <!-- 9. Royal Photo Memory Room Lightbox -->
+    <div id="photo-lightbox" class="fairytale-modal">
+        <div class="lightbox-card">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 8px;">
+                <span id="lightbox-counter" style="font-weight: 700; color: #b81447; font-size: 0.9rem;">Photo 1 of 8</span>
+                <button id="btn-lightbox-close" class="btn-close-corner" style="position: static;">✕</button>
+            </div>
+            <div class="lightbox-image-wrapper">
+                <img id="lightbox-img" src="./assets/photos/photo-1.jpg" alt="Princess Nandini Memory">
+            </div>
+            <div class="lightbox-caption-area">
+                <h4 id="lightbox-title" class="lightbox-title">Our Sweetest Moments</h4>
+                <p id="lightbox-desc" class="lightbox-desc">Every smile of yours brings sunshine into my fairytale world.</p>
+            </div>
+            <div class="lightbox-nav-row">
+                <button id="btn-photo-prev" class="btn-lightbox-nav">‹ Previous</button>
+                <button id="btn-photo-next" class="btn-lightbox-nav">Next ›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. Princess Day Celebration Modal -->
+    <div id="celebration-modal" class="fairytale-modal">
+        <div class="modal-content-card">
+            <div class="modal-header-icon">🎆👑✨</div>
+            <h2 class="modal-heading" style="font-size: 1.8rem;">Happy Princess Day, Nandini!</h2>
+            <p class="modal-quote" style="font-size: 1.25rem;">
+                “Today, this entire kingdom belongs to you.”
+            </p>
+            <p style="color: #6a2a43; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                Fireworks are lighting up the fairytale sky, rose petals are dancing in the breeze, and the royal crown shines only for you!
+            </p>
+            <button id="btn-last-surprise" class="btn-royal-enter" style="background: linear-gradient(135deg, #c9184a, #ff4d79);">
+                ONE LAST SURPRISE ❤️
+            </button>
+        </div>
+    </div>
+
+    <!-- 11. Final Royal Parchment Letter Modal -->
+    <div id="final-letter-modal" class="fairytale-modal">
+        <div class="royal-parchment-letter">
+            <button id="btn-final-close" class="btn-close-corner">✕</button>
+            <div class="letter-wax-seal">💌</div>
+            <p class="letter-text">
+                “You don’t need a fairytale to be a princess. You make every little moment feel magical.
+            </p>
+            <p class="letter-text">
+                And in my world, you will always be my favourite princess.”
+            </p>
+            <div class="letter-signature">
+                Forever yours,<br>
+                Ritik ❤️
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript App Entry -->
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
